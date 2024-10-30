@@ -2,8 +2,37 @@ import React from "react";
 import { Surface, Text, Button } from "react-native-paper";
 import { View, StyleSheet, Image, ScrollView } from "react-native";
 
+
+const getAdditionalImages = (eventId) => {
+  switch (eventId) {
+    case '1':
+      return [
+        require('../../assets/img/livinho1.webp'),
+        require('../../assets/img/livinho2.jpg'),
+        require('../../assets/img/luna1.webp'),
+        require('../../assets/img/luna2.jpeg'),
+      ];
+    case '2':
+      return [
+        require('../../assets/img/diad1.jpg'),
+        require('../../assets/img/diad2.jpg'),
+        require('../../assets/img/diad3.jpg'),
+        require('../../assets/img/diad4.jpg'),
+      ];
+
+    default:
+      return [
+        require('../../assets/img/festa1.jpg'),
+        require('../../assets/img/festa2.jpeg'),
+        require('../../assets/img/festa3.jpeg'),
+        require('../../assets/img/festa4.jpg'),
+      ];
+  }
+};
+
 export default function EventDetailsScreen({ route, navigation }) {
-  const { event } = route.params;  // O evento já contém as imagens na galeria
+  const { event } = route.params;
+  const additionalImages = getAdditionalImages(event.id); // Use o ID do evento para obter as imagens corretas
 
   return (
     <Surface style={styles.container}>
@@ -22,19 +51,19 @@ export default function EventDetailsScreen({ route, navigation }) {
       <ScrollView>
         <View style={styles.photosContainer}>
           <View style={styles.topRow}>
-            {event.gallery?.slice(0, 2).map((imageUri, index) => (
+            {additionalImages.slice(0, 2).map((image, index) => (
               <Image
                 key={index}
-                source={{ uri: imageUri }}
+                source={image}
                 style={styles.topImage}
               />
             ))}
           </View>
           <View style={styles.bottomRow}>
-            {event.gallery?.slice(2, 4).map((imageUri, index) => (
+            {additionalImages.slice(2, 4).map((image, index) => (
               <Image
                 key={index}
-                source={{ uri: imageUri }}
+                source={image}
                 style={styles.bottomImage}
               />
             ))}

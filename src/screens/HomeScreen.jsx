@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Button, Surface, Text, Card, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,30 +7,31 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function HomeScreen({ navigation, route }) {
   const [events, setEvents] = useState([]);
 
-  // Carregar eventos salvos no AsyncStorage ao carregar a tela
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const savedEvents = await AsyncStorage.getItem('events');
-        if (savedEvents !== null) {
-          setEvents(JSON.parse(savedEvents));
-        }
-      } catch (error) {
-        console.error("Erro ao carregar os eventos: ", error);
+  // Função para carregar eventos salvos no AsyncStorage ao carregar a tela
+  const loadEvents = async () => {
+    try {
+      const savedEvents = await AsyncStorage.getItem('events');
+      if (savedEvents !== null) {
+        setEvents(JSON.parse(savedEvents)); // Atualiza o estado com os eventos salvos
       }
-    };
+    } catch (error) {
+      console.error("Erro ao carregar os eventos: ", error);
+    }
+  };
+
+  // Carregar eventos quando a tela for montada
+  useEffect(() => {
     loadEvents();
   }, []);
 
-  // Salvar eventos no AsyncStorage apenas quando houver um novo evento
+  // Atualizar a lista de eventos quando um novo evento for adicionado
   useEffect(() => {
     if (route.params?.newEvent) {
       setEvents((prevEvents) => {
-        // Verifica se o evento já existe, evitando duplicatas
         const eventExists = prevEvents.some(event => event.id === route.params.newEvent.id);
         if (!eventExists) {
           const updatedEvents = [...prevEvents, route.params.newEvent];
-          saveEvents(updatedEvents); // Salvar eventos atualizados
+          saveEvents(updatedEvents); // Salvar no AsyncStorage
           return updatedEvents;
         }
         return prevEvents;
@@ -47,6 +48,38 @@ export default function HomeScreen({ navigation, route }) {
     }
   };
 
+  // Função para excluir um evento
+  const deleteEvent = (eventId) => {
+    Alert.alert(
+      "Confirmar Exclusão",
+      "Você tem certeza que deseja excluir este evento?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Filtra os eventos para remover o evento selecionado
+              const updatedEvents = events.filter(event => event.id !== eventId);
+              
+              // Atualiza o estado com os eventos restantes (remove da tela)
+              setEvents(updatedEvents);
+
+              // Atualiza o AsyncStorage com a lista de eventos sem o excluído
+              await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
+
+              Alert.alert("Sucesso", "Evento excluído com sucesso!");
+            } catch (error) {
+              console.error("Erro ao excluir o evento: ", error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Função para lidar com o clique em "Ver Detalhes" de um evento
   const handleEventPress = (event) => {
     navigation.navigate('EventDetails', { event });
   };
@@ -75,42 +108,41 @@ export default function HomeScreen({ navigation, route }) {
         <View style={styles.subtitleContainer}>
           <Text style={styles.subtitle}>Eventos Imperdíveis</Text>
         </View>
-        {events.map((event, index) => (
-          <Card key={index} style={styles.eventCard} onPress={() => handleEventPress(event)}>
-            <Card.Cover
-              source={{ uri: event.image }}
-              style={styles.cardImage}
-            />
-            <Card.Title
-              title={event.title}
-              subtitle={event.subtitle}
-              left={(props) => (
-                <IconButton
-                  {...props}
-                  icon={event.icon}
-                  style={styles.cardIcon}
-                />
-              )}
-              titleStyle={styles.cardTitle}
-              subtitleStyle={styles.cardSubtitle}
-            />
-            <Card.Content>
-              <Text style={styles.eventDate}>{event.date}</Text>
-              <Text style={styles.eventDescription}>{event.description}</Text>
-
-              {/* Renderizando imagens da galeria */}
-              <ScrollView horizontal contentContainerStyle={styles.galleryContainer}>
-                {event.gallery?.map((imageUri, galleryIndex) => (
-                  <Image
-                    key={galleryIndex}
-                    source={{ uri: imageUri }}
-                    style={styles.galleryImage}
+        {events.length > 0 ? (
+          events.map((event) => (
+            <Card key={event.id} style={styles.eventCard}>
+              <Card.Cover
+                source={{ uri: event.image }}
+                style={styles.cardImage}
+              />
+              <Card.Title
+                title={event.title}
+                subtitle={event.subtitle}
+                left={(props) => (
+                  <IconButton
+                    {...props}
+                    icon={event.icon}
+                    style={styles.cardIcon}
                   />
-                ))}
-              </ScrollView>
-            </Card.Content>
-          </Card>
-        ))}
+                )}
+                titleStyle={styles.cardTitle}
+                subtitleStyle={styles.cardSubtitle}
+              />
+              <Card.Content>
+                <Text style={styles.eventDate}>{event.date}</Text>
+                <Text style={styles.eventDescription}>{event.description}</Text>
+              </Card.Content>
+
+              {/* Botões "Ver Detalhes" e "Excluir" */}
+              <Card.Actions>
+                <Button onPress={() => handleEventPress(event)}>Ver Detalhes</Button>
+                <Button onPress={() => deleteEvent(event.id)} color="red">Excluir</Button>
+              </Card.Actions>
+            </Card>
+          ))
+        ) : (
+          <Text style={styles.noEventsText}>Nenhum evento disponível.</Text>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -175,7 +207,7 @@ const styles = StyleSheet.create({
   innerContainer: {
     paddingHorizontal: 16,
     paddingBottom: 80,
-    paddingTop: 60, // Para evitar sobreposição com o header
+    paddingTop: 60,
   },
   subtitleContainer: {
     paddingVertical: 24,
@@ -221,6 +253,12 @@ const styles = StyleSheet.create({
   cardIcon: {
     alignSelf: 'center',
   },
+  noEventsText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#999',
+    marginTop: 20,
+  },
   footer: {
     width: '100%',
     flexDirection: 'row',
@@ -237,15 +275,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     flex: 1,
     marginHorizontal: 5,
-  },
-  galleryContainer: {
-    flexDirection: 'row',
-    marginTop: 10,
-  },
-  galleryImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginRight: 10,
   },
 });
