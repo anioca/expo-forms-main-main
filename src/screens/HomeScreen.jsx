@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Button, Surface, Text, Card, IconButton } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, ScrollView, Alert } from "react-native";
+import { Button, Surface, Text, Card, IconButton } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen({ navigation, route }) {
   const [events, setEvents] = useState([]);
@@ -10,9 +10,13 @@ export default function HomeScreen({ navigation, route }) {
   // Função para carregar eventos salvos no AsyncStorage ao carregar a tela
   const loadEvents = async () => {
     try {
-      const savedEvents = await AsyncStorage.getItem('events');
+      const savedEvents = await AsyncStorage.getItem("events");
       if (savedEvents !== null) {
-        setEvents(JSON.parse(savedEvents)); // Atualiza o estado com os eventos salvos
+        const parsedEvents = JSON.parse(savedEvents);
+        setEvents(parsedEvents); // Atualiza o estado com os eventos salvos
+        console.log("Eventos carregados do AsyncStorage:", parsedEvents);
+      } else {
+        console.log("Nenhum evento encontrado no AsyncStorage.");
       }
     } catch (error) {
       console.error("Erro ao carregar os eventos: ", error);
@@ -28,7 +32,9 @@ export default function HomeScreen({ navigation, route }) {
   useEffect(() => {
     if (route.params?.newEvent) {
       setEvents((prevEvents) => {
-        const eventExists = prevEvents.some(event => event.id === route.params.newEvent.id);
+        const eventExists = prevEvents.some(
+          (event) => String(event.id) === String(route.params.newEvent.id)
+        );
         if (!eventExists) {
           const updatedEvents = [...prevEvents, route.params.newEvent];
           saveEvents(updatedEvents); // Salvar no AsyncStorage
@@ -42,14 +48,16 @@ export default function HomeScreen({ navigation, route }) {
   // Função para salvar eventos no AsyncStorage
   const saveEvents = async (updatedEvents) => {
     try {
-      await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
+      await AsyncStorage.setItem("events", JSON.stringify(updatedEvents));
+      console.log("Eventos salvos no AsyncStorage:", updatedEvents);
     } catch (error) {
       console.error("Erro ao salvar os eventos: ", error);
     }
   };
 
-  // Função para excluir um evento
   const deleteEvent = (eventId) => {
+    console.log("Tentativa de exclusão para o ID:", eventId);
+  
     Alert.alert(
       "Confirmar Exclusão",
       "Você tem certeza que deseja excluir este evento?",
@@ -60,28 +68,28 @@ export default function HomeScreen({ navigation, route }) {
           style: "destructive",
           onPress: async () => {
             try {
-              // Filtra os eventos para remover o evento selecionado
-              const updatedEvents = events.filter(event => event.id !== eventId);
-              
-              // Atualiza o estado com os eventos restantes (remove da tela)
+              console.log("Excluir botão pressionado para o ID:", eventId);
+              console.log("Eventos antes da exclusão:", events);
+  
+              const updatedEvents = events.filter(
+                (event) => String(event.id) !== String(eventId)
+              );
+  
+              console.log("Eventos após exclusão (estado local):", updatedEvents);
               setEvents(updatedEvents);
-
-              // Atualiza o AsyncStorage com a lista de eventos sem o excluído
-              await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
-
+              await AsyncStorage.setItem("events", JSON.stringify(updatedEvents));
+  
+              const savedEvents = await AsyncStorage.getItem("events");
+              console.log("Eventos no AsyncStorage após exclusão:", JSON.parse(savedEvents));
+  
               Alert.alert("Sucesso", "Evento excluído com sucesso!");
             } catch (error) {
               console.error("Erro ao excluir o evento: ", error);
             }
-          }
-        }
+          },
+        },
       ]
     );
-  };
-
-  // Função para lidar com o clique em "Ver Detalhes" de um evento
-  const handleEventPress = (event) => {
-    navigation.navigate('EventDetails', { event });
   };
 
   return (
@@ -135,8 +143,13 @@ export default function HomeScreen({ navigation, route }) {
 
               {/* Botões "Ver Detalhes" e "Excluir" */}
               <Card.Actions>
-                <Button onPress={() => handleEventPress(event)}>Ver Detalhes</Button>
-                <Button onPress={() => deleteEvent(event.id)} color="red">Excluir</Button>
+                <Button onPress={() => handleEventPress(event)}>
+                  Ver Detalhes
+                </Button>
+                <Button
+                  onPress={() => {deleteEvent(event.id);}}>
+                    Excluir
+                </Button>
               </Card.Actions>
             </Card>
           ))
@@ -177,30 +190,30 @@ export default function HomeScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 10,
-    backgroundColor: '#ffffff',
-    position: 'absolute',
+    backgroundColor: "#ffffff",
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     zIndex: 1,
   },
   initialButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   initialButtonText: {
     fontSize: 18,
-    color: '#a547bf',
-    textTransform: 'uppercase',
-    fontWeight: 'bold',
+    color: "#a547bf",
+    textTransform: "uppercase",
+    fontWeight: "bold",
   },
   profileButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 30,
     padding: 10,
   },
@@ -211,14 +224,14 @@ const styles = StyleSheet.create({
   },
   subtitleContainer: {
     paddingVertical: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   subtitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#a547bf',
-    textAlign: 'center',
-    textTransform: 'uppercase',
+    fontWeight: "bold",
+    color: "#a547bf",
+    textAlign: "center",
+    textTransform: "uppercase",
     letterSpacing: 1.5,
     margin: 20,
   },
@@ -226,7 +239,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 10,
     elevation: 6,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   cardImage: {
     borderTopLeftRadius: 10,
@@ -234,45 +247,45 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   cardSubtitle: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
   },
   eventDate: {
     fontSize: 16,
-    color: '#555',
+    color: "#555",
     marginBottom: 8,
   },
   eventDescription: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   cardIcon: {
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   noEventsText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    color: '#999',
+    color: "#999",
     marginTop: 20,
   },
   footer: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    position: 'absolute',
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    position: "absolute",
     bottom: 0,
     padding: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopWidth: 1,
-    borderTopColor: '#cccccc',
+    borderTopColor: "#cccccc",
   },
   button: {
     borderRadius: 8,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     flex: 1,
     marginHorizontal: 5,
   },

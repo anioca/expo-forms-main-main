@@ -1,5 +1,5 @@
 import { Camera, CameraView } from "expo-camera";
-import { Surface } from "react-native-paper";
+
 import {
   AppState,
   Linking,
@@ -10,21 +10,22 @@ import {
 } from "react-native";
 
 import { useEffect, useRef } from "react";
+import { Surface, Text } from "react-native-paper";
 
 export default function ScannerScreen() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        qrLock.current = false;
-      }
-      appState.current = nextAppState;
-    });
+    // const subscription = AppState.addEventListener("change", (nextAppState) => {
+    //   if (
+    //     appState.current.match(/inactive|background/) &&
+    //     nextAppState === "active"
+    //   ) {
+    //     qrLock.current = false;
+    //   }
+    //   appState.current = nextAppState;
+    // });
 
     return () => {
       subscription.remove();
@@ -33,7 +34,7 @@ export default function ScannerScreen() {
 
   return (
     <Surface>
-      {Platform.OS === "android" ? <StatusBar hidden /> : null}
+      {/* {Platform.OS === "android" ? <StatusBar hidden /> : null}
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
@@ -45,8 +46,8 @@ export default function ScannerScreen() {
             }, 500);
           }
         }}
-      />
-
+      /> */}
+      <Text>oii</Text>
     </Surface>
   );
 }
